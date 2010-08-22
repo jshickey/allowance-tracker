@@ -2,7 +2,7 @@
   :description "Simple Clojure app for using Compojure on Google App Engine"
  
   ; namespaces will drive what get compiled AOT, required for deploying to Google App Engine
-  :namespaces [com.changeitupdesign.allowancetracker.core]
+  :namespaces [com.changeitupdesigns.allowancetracker.core]
 
   :dependencies [[compojure "0.4.1"]
                  [ring/ring "0.2.5"]

@@ -116,6 +116,15 @@ ledger))))
 		     :userid (.getEmail user)}))
   (redirect "/"))
 
+(defn create-account-from-params [params]
+  "Stores a new account in the datastore and issues an HTTP Redirect to the main page."
+  (println params)
+  (let [ui (users/user-info)
+        user (:user ui)]
+    (ds/create-entity {:kind "account"
+		     :account-name (params "account-name")}))
+  (redirect "/"))
+
 ;; update entities 
 (defn update-ledger-entry-from-params [params]
   "Updates a ledger entry in the datastore and issues an HTTP Redirect to the main page."
@@ -189,7 +198,8 @@ ledger))))
 	    [:li "Selected Account: " selected-account]
 	    [:li "Current Balance for " selected-account ": $" (balance ledger)]
 	    [:li (link-to (.createLogoutURL (:user-service ui) "/") "Logout")]
-	    [:li (link-to "/new" "Create new ledger entry")]]
+	    [:li (link-to "/new" "Create new ledger entry")]
+	    [:li (link-to "/newaccount" "Create new account")]]
 	   [:form {:method "post" :action "/changecurrentaccount"}
 	    (drop-down :account-list
 		       (map :account-name (get-all-accounts (.getEmail user))) 
@@ -257,6 +267,17 @@ ledger))))
                  (text-field :amount (ledger-entry :amount))]]
                [:button {:type "submit" :name "save-button" :value "Save"} "Save"]])))
 
+(def new-account-form
+     (form-to [:post "/createaccount"]
+              [:fieldset
+               [:legend "Create a new ledger account"]
+               [:ol
+                [:li
+                 [:label {:for :account-name} "Account Name:"]
+                 (text-field :account-name)]
+               [:button {:type "submit"} "Save"]]]))
+
+
 (defn change-current-account [params] 
  (println "trying to put into the session " (params "account-list"))
  (session-put! "current-user" (params "account-list"))
@@ -265,6 +286,7 @@ ledger))))
 (defroutes public-routes
   (GET "/" {session :session}  (main-page (session-get "current-user")))
   (GET  "/new"  [] (render-page "New Ledger Entry" new-form))
+  (GET  "/newaccount"  [] (render-page "Create New Account" new-account-form))
   (POST  "/edit" {params :params}
 	 (let [selected (params "ledger-list-box")
 	       button (params "ledger-crud-button")]
@@ -272,6 +294,7 @@ ledger))))
 	     (delete-ledger-entry-from-params selected)
 	     (render-page "Update Ledger Entry" (edit-form selected)))))
   (POST "/createledgerentry" {params :params}  (create-ledger-entry-from-params params))
+  (POST "/createaccount" {params :params}  (create-account-from-params params))
   (POST "/updateledgerentry" {params :params}   (update-ledger-entry-from-params params))
   (POST "/changecurrentaccount" {params :params} ( change-current-account params))
   (GET "/dumpdata" [] (dump-data)))
