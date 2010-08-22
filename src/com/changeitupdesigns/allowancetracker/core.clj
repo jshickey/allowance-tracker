@@ -131,6 +131,14 @@ ledger))))
 		     :userid (.getEmail user)}))
   (redirect "/"))
 
+;; delete entities 
+(defn delete-ledger-entry-from-params [datastore-key]
+  "deletes a ledger entry in the datastore and issues an HTTP Redirect to the main page."
+  (println "deleting a ledger entry:" datastore-key)
+  (let [ui (users/user-info)
+        user (:user ui)]
+    (ds/delete-entity  (ds/get-entity (ds/string->key datastore-key))))
+  (redirect "/"))
 
 (defn save-ledger [ledger]
   (map create-ledger-entry ledger))
@@ -190,7 +198,9 @@ ledger))))
 	   [:form {:method "post" :action "/edit"} 
 	    (drop-down {:size 10} :ledger-list-box (map #(vector (apply str (interpose " " (display-ledger-entry %))) (ds/key->string (% :key))) ledger))
 	    [:br]
-	    [:input.action {:type "submit" :value "Edit"}]]))
+	    [:input.action {:type "submit" :name "ledger-crud-button" :value "Edit"}]
+	    [:br]
+	    [:input.action {:type "submit" :name "ledger-crud-button" :value "Delete"}]]))
 	  [:ul
 	   [:li "Not logged in"]
 	   [:li (link-to (.createLoginURL (:user-service ui) "/") "Login")]]
@@ -245,9 +255,9 @@ ledger))))
                 [:li
                  [:label {:for :amount} "Amount"]
                  (text-field :amount (ledger-entry :amount))]]
-               [:button {:type "submit"} "Save"]])))
+               [:button {:type "submit" :name "save-button" :value "Save"} "Save"]])))
 
-(defn go-to-main [params] 
+(defn change-current-account [params] 
  (println "trying to put into the session " (params "account-list"))
  (session-put! "current-user" (params "account-list"))
   (redirect "/"))
@@ -255,10 +265,15 @@ ledger))))
 (defroutes public-routes
   (GET "/" {session :session}  (main-page (session-get "current-user")))
   (GET  "/new"  [] (render-page "New Ledger Entry" new-form))
-  (POST  "/edit" [ledger-list-box] (render-page "Update Ledger Entry" (edit-form ledger-list-box)))
+  (POST  "/edit" {params :params}
+	 (let [selected (params "ledger-list-box")
+	       button (params "ledger-crud-button")]
+	   (if (= button "Delete")
+	     (delete-ledger-entry-from-params selected)
+	     (render-page "Update Ledger Entry" (edit-form selected)))))
   (POST "/createledgerentry" {params :params}  (create-ledger-entry-from-params params))
   (POST "/updateledgerentry" {params :params}   (update-ledger-entry-from-params params))
-  (POST "/changecurrentaccount" {params :params} (go-to-main params))
+  (POST "/changecurrentaccount" {params :params} ( change-current-account params))
   (GET "/dumpdata" [] (dump-data)))
 
 (defroutes example
