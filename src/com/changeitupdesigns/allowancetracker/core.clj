@@ -184,8 +184,8 @@ ledger))))
 	    [:li (link-to "/new" "Create new ledger entry")]]
 	   [:form {:method "post" :action "/changecurrentaccount"}
 	    (drop-down :account-list
-		       (map :account-name (get-all-accounts (.getEmail user))))
-	    [:br]
+		       (map :account-name (get-all-accounts (.getEmail user))) 
+		       selected-account)
 	    [:input.action {:type "submit" :value "Change Account"}]]
 	   [:form {:method "post" :action "/edit"} 
 	    (drop-down {:size 10} :ledger-list-box (map #(vector (apply str (interpose " " (display-ledger-entry %))) (ds/key->string (% :key))) ledger))
