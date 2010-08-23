@@ -1,6 +1,7 @@
 (ns com.changeitupdesigns.allowancetracker.core
   (:gen-class :extends javax.servlet.http.HttpServlet)
 
+  ;; TODO - add :only to all libraries that are used
   (:use compojure.core
 	ring.middleware.session
 	(sandbar stateful-session)
@@ -14,30 +15,20 @@
     [appengine.datastore.core :as ds]
     [appengine.users :as users])
 
-  (:gen-class :extends javax.servlet.http.HttpServlet)
-
   (:import (com.google.appengine.api.datastore Query Query$FilterOperator)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MODEL functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; TODO - change to defrecord
+;; TODO - update ledger be part of account?
+;; TODO - write tests for the model
+;; TODO - move the model into its own namespace/file
 
 (defstruct ledger-entry :account-name :date :earned-spent :amount :reason :user)
 (defstruct account :account-name :ledger)
-
-(def cams-ledger (list
-  (struct ledger-entry "Cam" "2010-10-17" 'earned 19.75 "Initial Balance" "jscotthickey@gmail.com")
-  (struct ledger-entry "Cam" "2010-10-19" 'earned 20.00 "Mowing" "jscotthickey@gmail.com")
-  (struct ledger-entry "Cam" "2010-10-26" 'earned 30.00 "Report Cards - As" "jscotthickey@gmail.com")
-  (struct ledger-entry "Cam" "2010-10-26" 'earned 20.00 "Mowing" "jscotthickey@gmail.com")
-  (struct ledger-entry "Cam" "2010-11-09" 'spent 19.75 "Hellboy Book" "jscotthickey@gmail.com")))
-
-;(def cams-account (struct account "Cam" cams-ledger))
-
-(defn subtotal-old
-  "Sum the amount property in the ledger that match the value passed for earned or spent.
-   The expected values are 'earned 'spent"
-  [ledger earned-spent]
-  (reduce +
-	  (map :amount
-	       (filter #(=  (% :earned-spent)  earned-spent) 
-ledger))))
 
 ;; uses thread last macro for expression threading
 (defn subtotal  [ledger earned-spent]
@@ -53,17 +44,18 @@ ledger))))
   "calculate the current balance of the ledger subtracting spent from earned amounts"
    (- (subtotal-earned ledger) (subtotal-spent ledger)))
 
-
-(defn list-of-propertys [p struct]
+(defn list-of-property-values [p struct]
  (map #(%1 struct) p))
 
-(def column-headings '(:account-name :date :earned-spent :amount :reason))
+;; 
+(def ledger-properties '(:account-name :date :earned-spent :amount :reason))
 
 (defn display-ledger-entry [ledger-entry]
-  (map #(%1 ledger-entry) column-headings))
+  (map #(%1 ledger-entry) ledger-properties))
 
 (defn display-ledger [ledger]
- (map #(list-of-propertys column-headings %1) ledger))
+  "shows only the property values for each ledger entry" 
+ (map #(display-ledger-entry %) ledger))
 
 ;;
 ;; DATASTORE FUNCTIONS
